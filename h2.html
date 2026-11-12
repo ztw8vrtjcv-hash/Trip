@@ -1,0 +1,2556 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>2026 日本之旅 - 全球雲端共享手帳助理</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <style>
+        /* Ins 輕鬆休閒風核心色彩與全域變數 */
+        :root {
+            --bg-canvas: #f7f3ed;
+            --phone-bg: #fffbf7;
+            --primary: #df9898;
+            --primary-light: #fbf0f0;
+            --text-main: #5c4e4e;
+            --text-sub: #a89a90;
+            --border: #f0e6dd;
+            --card-bg: #ffffff;
+            --shadow: 0 8px 24px rgba(180, 160, 150, 0.08);
+            --radius-main: 24px;
+            --radius-card: 18px;
+            --ticket-pink: #df9898;
+            --ticket-cream: #fffdf9;
+
+            /* 行程與記帳分類配色 */
+            --tag-food: #f3a971;
+            --tag-spot: #7ec2a7;
+            --tag-transport: #6faad9;
+            --tag-hotel: #aa96da;
+            --tag-shopping: #ea90b1;
+            --tag-prep: #85a5cc;
+            
+            --base-font-size: 16px;
+        }
+
+        body.dark-mode {
+            --bg-canvas: #1e1a1a;
+            --phone-bg: #2d2424;
+            --primary: #e5a9a9;
+            --primary-light: #443535;
+            --text-main: #f3eae4;
+            --text-sub: #cbc0b7;
+            --border: #443937;
+            --card-bg: #372e2e;
+            --shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            --ticket-pink: #d48787;
+            --ticket-cream: #423838;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "PingFang TC", "Helvetica Neue", sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            font-size: var(--base-font-size);
+            overflow-x: hidden;
+        }
+
+        /* 單頁式全螢幕鋪滿排版 */
+        .phone-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--phone-bg);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: var(--shadow);
+            padding-bottom: 90px;
+        }
+
+        /* 頂部主視覺區 */
+        .cover-banner {
+            width: 100%;
+            height: 230px;
+            background-image: linear-gradient(rgba(223,152,152,0.25), rgba(255,251,247,1)), url('https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .cover-title {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: var(--text-main);
+            text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff;
+            outline: none;
+        }
+
+        .cover-subtitle {
+            font-size: 1rem;
+            color: var(--text-sub);
+            margin-top: 4px;
+            font-weight: 500;
+            text-shadow: 1px 1px 0px #fff;
+            outline: none;
+        }
+
+        /* 倒數計時組件 */
+        .countdown-card {
+            background: rgba(255, 253, 249, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 12px 16px;
+            margin: -25px 16px 15px 16px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+        }
+
+        .countdown-label {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            font-weight: bold;
+        }
+
+        .countdown-time {
+            font-size: 1.1rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        /* 應用程式主內容區 */
+        .app-content {
+            padding: 0 16px;
+            flex: 1;
+        }
+
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        /* 頁面標題與通用新增按鈕 */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            margin-top: 10px;
+        }
+
+        .section-header h2 {
+            font-size: 1.5rem;
+            color: var(--text-main);
+            font-weight: bold;
+        }
+
+        .btn-add-global {
+            background-color: var(--primary);
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(223,152,152,0.3);
+        }
+
+        /* 日期滑動導覽列 */
+        .date-carousel-container {
+            margin-bottom: 10px;
+        }
+        
+        .date-carousel {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 6px 4px;
+            scrollbar-width: none;
+            align-items: stretch;
+        }
+
+        .date-carousel::-webkit-scrollbar {
+            display: none;
+        }
+
+        .date-tab {
+            flex: 0 0 65px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 10px 0;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .date-tab .day-name {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .date-tab .day-num {
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .date-tab .month-badge {
+            font-size: 0.62rem;
+            color: var(--text-sub);
+            display: block;
+            margin-top: 2px;
+        }
+
+        .date-tab.active {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            transform: scale(1.06);
+            box-shadow: 0 6px 16px rgba(223,152,152,0.25);
+        }
+
+        .date-tab.active .day-name, 
+        .date-tab.active .day-num,
+        .date-tab.active .month-badge {
+            color: #ffffff;
+        }
+
+        /* 新增日期按鈕卡片 */
+        .date-tab-add {
+            flex: 0 0 54px;
+            background-color: var(--primary-light);
+            border: 2px dashed var(--primary);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--primary);
+            transition: all 0.2s ease;
+        }
+
+        .date-tab-add:hover {
+            background-color: var(--primary);
+            color: #ffffff;
+        }
+
+        .date-tab-add i {
+            font-size: 1.1rem;
+            margin-bottom: 2px;
+        }
+
+        .date-tab-add span {
+            font-size: 0.68rem;
+            font-weight: bold;
+        }
+
+        /* 天氣、大Day數組件 */
+        .day-meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
+            gap: 10px;
+        }
+
+        .day-title-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .big-day-title {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--text-main);
+            line-height: 1.1;
+        }
+
+        .sub-date-label {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .weather-widget-mini {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .weather-widget-mini:hover {
+            transform: translateY(-1px);
+            border-color: var(--primary);
+        }
+
+        .weather-icon-big {
+            font-size: 1.8rem;
+        }
+
+        .weather-info-text h4 {
+            font-size: 0.92rem;
+            color: var(--text-main);
+        }
+
+        .weather-info-text p {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+        }
+
+        .day-edit-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background-color: var(--primary-light);
+            color: var(--primary);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-left: 4px;
+        }
+
+        /* 精緻地點小卡片與三導航欄位 */
+        .schedule-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 16px;
+            margin-bottom: 14px;
+            position: relative;
+            box-shadow: var(--shadow);
+        }
+
+        .schedule-time-badge {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .schedule-main-box {
+            border-left: 3px solid var(--primary);
+            padding-left: 12px;
+            margin-top: 6px;
+            position: relative;
+        }
+
+        .schedule-category-tag {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #ffffff;
+            padding: 2px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .schedule-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .schedule-spot-name {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .schedule-spot-address {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            margin-top: 2px;
+            margin-bottom: 8px;
+        }
+
+        /* 導航按鈕樣式 - 粉紅色 Ins 風圈圈 */
+        .nav-circle-btn {
+            width: 28px;
+            height: 28px;
+            background-color: var(--primary-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .nav-circle-btn:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* 優先與候補停車格 */
+        .parking-container {
+            margin-top: 8px;
+            background: var(--phone-bg);
+            border-radius: 10px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .parking-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.82rem;
+        }
+
+        .parking-label {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .parking-val {
+            color: var(--text-sub);
+            margin-left: 4px;
+        }
+
+        .card-edit-pen-btn {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            color: var(--text-sub);
+            cursor: pointer;
+            font-size: 1rem;
+            background: none;
+            border: none;
+        }
+
+        .card-edit-pen-btn:hover {
+            color: var(--primary);
+        }
+
+        /* 登機證風格機票卡片 (Boarding Pass) */
+        .ticket-boarding-pass {
+            background: linear-gradient(135deg, #fbf0f0 0%, #ffffff 100%);
+            border: 2px solid var(--primary);
+            border-radius: var(--radius-card);
+            overflow: hidden;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .ticket-top-pink {
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ticket-top-pink h3 {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .ticket-main-body {
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .airport-code-box h4 {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: var(--text-main);
+        }
+
+        .airport-code-box p {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+        }
+
+        .flight-center-plane {
+            text-align: center;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .flight-center-plane .plane-icon {
+            font-size: 1.5rem;
+            color: var(--primary);
+            animation: pulsePlane 2s infinite;
+        }
+
+        .flight-number-badge {
+            background-color: var(--border);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: var(--text-main);
+            margin-top: 4px;
+            display: inline-block;
+        }
+
+        .ticket-dotted-divider {
+            border-top: 2px dashed var(--border);
+            margin: 0 16px;
+            position: relative;
+        }
+
+        .ticket-dotted-divider::before, .ticket-dotted-divider::after {
+            content: '';
+            width: 14px;
+            height: 14px;
+            background-color: var(--phone-bg);
+            border-radius: 50%;
+            position: absolute;
+            top: -7px;
+        }
+        .ticket-dotted-divider::before { left: -23px; border-right: 1px solid var(--border); }
+        .ticket-dotted-divider::after { right: -23px; border-left: 1px solid var(--border); }
+
+        .ticket-footer-info {
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            background-color: rgba(255,251,247,0.5);
+        }
+
+        .ticket-footer-info strong {
+            color: var(--text-main);
+        }
+
+        /* 記帳頁面：放大拉長即時匯率卡片 */
+        .live-rate-banner-box {
+            background-color: var(--card-bg);
+            border: 2px solid var(--primary);
+            border-radius: var(--radius-card);
+            padding: 18px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .rate-calculator-title {
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .rate-calc-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .rate-calc-input {
+            width: 110px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--text-main);
+            outline: none;
+            background-color: var(--phone-bg);
+        }
+
+        .rate-calc-equal {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .rate-calc-result-text {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .rate-update-stamp-text {
+            font-size: 0.72rem;
+            color: var(--text-sub);
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        /* 記帳看板與統計分流 */
+        .ledger-total-dashboard {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--card-bg) 100%);
+            border-radius: var(--radius-card);
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .ledger-main-spend-hkd {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--primary);
+        }
+
+        .ledger-sub-spend-jpy {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            margin-bottom: 12px;
+        }
+
+        .payment-split-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+            font-size: 0.8rem;
+        }
+
+        .payment-split-item {
+            color: var(--text-main);
+        }
+
+        /* 篩選頁籤與記帳列表 */
+        .filter-tabs-scroll {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            margin-bottom: 12px;
+            padding-bottom: 4px;
+        }
+
+        .filter-pill-btn {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            color: var(--text-main);
+            white-space: nowrap;
+        }
+
+        .filter-pill-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .ledger-date-group-header {
+            font-size: 0.82rem;
+            color: var(--text-sub);
+            margin: 10px 0 6px 2px;
+            font-weight: bold;
+        }
+
+        .ledger-item-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .ledger-left-icon-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            margin-right: 10px;
+        }
+
+        .ledger-mid-details h4 {
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        .ledger-mid-details p {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+        }
+
+        .ledger-right-amounts {
+            text-align: right;
+        }
+
+        .ledger-jpy-big {
+            font-size: 1.05rem;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .ledger-hkd-sub {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+        }
+
+        /* 購物清單雙統計卡片 */
+        .shopping-stats-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .shop-stat-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+        }
+
+        .shop-stat-number {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        /* 商品卡片樣式 */
+        .product-item-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            position: relative;
+            box-shadow: var(--shadow);
+        }
+
+        .product-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--primary);
+            border-radius: 4px;
+            margin-right: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .product-checkbox.checked {
+            background-color: var(--text-sub);
+            border-color: var(--text-sub);
+        }
+
+        .product-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 0.75rem;
+        }
+
+        .product-img-thumb {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            object-fit: cover;
+            background-color: var(--border);
+            margin-right: 12px;
+        }
+
+        .product-mid-info {
+            flex: 1;
+        }
+
+        .product-name-txt {
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .product-tags-row {
+            display: flex;
+            gap: 4px;
+            margin: 4px 0;
+            flex-wrap: wrap;
+        }
+
+        .mini-pill-badge {
+            font-size: 0.65rem;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .product-card-finished {
+            opacity: 0.6;
+        }
+
+        /* 準備清單卡片系統 */
+        .prep-static-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .prep-static-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .qr-upload-placeholder-zone {
+            width: 100%;
+            height: 90px;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.78rem;
+            color: var(--text-sub);
+            cursor: pointer;
+            overflow: hidden;
+            background-color: var(--phone-bg);
+        }
+
+        .qr-upload-placeholder-zone img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .emergency-grid-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .emergency-btn-item {
+            background-color: var(--primary-light);
+            border: 1px solid var(--primary);
+            border-radius: 10px;
+            padding: 8px;
+            text-align: center;
+            color: var(--text-main);
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        /* 成員頁面卡片 */
+        .member-row-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            box-shadow: var(--shadow);
+        }
+
+        .member-avatar-img {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--primary);
+            margin-right: 12px;
+            background-color: var(--border);
+        }
+
+        .member-name-txt {
+            font-size: 1.05rem;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .member-role-txt {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+        }
+
+        /* 全域底部固定導航欄 */
+        .bottom-nav-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 76px;
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 900;
+        }
+
+        .nav-item-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-sub);
+            text-decoration: none;
+            cursor: pointer;
+            background: none;
+            border: none;
+            width: 15%;
+            transition: all 0.2s;
+        }
+
+        .nav-item-btn i {
+            font-size: 1.25rem;
+            margin-bottom: 4px;
+        }
+
+        .nav-item-btn span {
+            font-size: 0.72rem;
+            font-weight: bold;
+        }
+
+        .nav-item-btn.active {
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* 亮晶晶貼紙懸浮按鈕中心 */
+        .sticker-magic-trigger {
+            position: fixed;
+            bottom: 90px;
+            right: calc(50% - 230px);
+            width: 44px;
+            height: 44px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.15rem;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(223,152,152,0.4);
+            z-index: 2000;
+        }
+
+        @media (max-width: 500px) {
+            .sticker-magic-trigger {
+                right: 16px;
+            }
+        }
+
+        /* 動態畫布貼紙實體 */
+        .sticker-canvas-item {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+            z-index: 1500;
+            transform-origin: center center;
+            transition: transform 0.1s ease-out;
+        }
+
+        .sticker-canvas-item img {
+            max-width: 75px;
+            max-height: 75px;
+            display: block;
+            pointer-events: none;
+        }
+
+        /* 彈出表單視窗式樣 (Modal) */
+        .modal-overlay-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.4);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-form-window {
+            background-color: var(--phone-bg);
+            border-radius: var(--radius-main);
+            width: 100%;
+            max-width: 420px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 22px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.15);
+            border: 2px solid var(--border);
+        }
+
+        .modal-form-window h3 {
+            font-size: 1.3rem;
+            color: var(--text-main);
+            margin-bottom: 16px;
+            font-weight: bold;
+        }
+
+        .form-group-item {
+            margin-bottom: 12px;
+        }
+
+        .form-group-item label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: bold;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+        }
+
+        .form-control-input, .form-control-select, .form-control-textarea {
+            width: 100%;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 0.92rem;
+            color: var(--text-main);
+            outline: none;
+        }
+
+        .modal-action-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 18px;
+        }
+
+        .modal-double-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action-submit {
+            flex: 1;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-action-cancel {
+            flex: 1;
+            background-color: var(--border);
+            color: var(--text-main);
+            border: none;
+            padding: 10px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-action-delete-danger {
+            width: 100%;
+            background-color: #e57373;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* 動畫效果 */
+        @keyframes pulsePlane {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15) translateX(3px); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="phone-container" id="appCanvas">
+
+    <input type="file" id="coverImageFileInput" style="display: none;" accept="image/*"/>
+    <input type="file" id="stickerUploadFileInput" style="display: none;" accept="image/*"/>
+    <input type="file" id="qrOneFileInput" style="display: none;" accept="image/*"/>
+    <input type="file" id="qrTwoFileInput" style="display: none;" accept="image/*"/>
+
+    <div id="globalHeaderBannerRegion">
+        <div class="cover-banner" id="mainCoverBanner" title="點擊上傳自訂背景圖">
+            <h1 class="cover-title" id="editableCoverTitle" ondblclick="makeEditable(this, 'title')">2026 日本</h1>
+            <p class="cover-subtitle" id="editableCoverSub" ondblclick="makeEditable(this, 'sub')">🎉生日之旅🎁</p>
+        </div>
+        <div class="countdown-card">
+            <span class="countdown-label"><i class="fa-solid fa-plane-departure"></i> 距離出發倒數：</span>
+            <span class="countdown-time" id="countdownTimeDisplay">00天 00時 00分 00秒</span>
+        </div>
+    </div>
+
+    <div class="app-content">
+
+        <div id="section-schedule" class="page-section active">
+            <!-- 行程滑動列（包含動態日期切換、＋新增行程日與雙點擊修改日期） -->
+            <div class="date-carousel-container">
+                <div class="date-carousel" id="scheduleDateTabsCarousel"></div>
+            </div>
+
+            <!-- 當日大標題、實際日期與可編輯的天氣資訊卡 -->
+            <div class="day-meta-row">
+                <div class="day-title-group">
+                    <div class="big-day-title" id="bigDayNumberLabel">Day 1</div>
+                    <div class="sub-date-label" id="subDateFullLabel">2026/06/11 (週四)</div>
+                </div>
+                
+                <div class="weather-widget-mini" onclick="openDayMetaModal()" title="點擊更改此日日期、天氣或刪減天數">
+                    <span class="weather-icon-big" id="weatherIconDisplay">☀️</span>
+                    <div class="weather-info-text">
+                        <h4 id="weatherTempDisplay">27°C (體感 30°C)</h4>
+                        <p id="weatherDescCityDisplay">Sunny · Tokyo</p>
+                    </div>
+                    <button type="button" class="day-edit-btn" title="編輯當天日期/天氣/刪減"><i class="fa-solid fa-pen"></i></button>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <h3 style="font-size:1.1rem; font-weight:bold; color:var(--text-main);">當日行程活動</h3>
+                <button class="btn-add-global" onclick="openAddModal('schedule')"><i class="fa-solid fa-plus"></i> 新增</button>
+            </div>
+
+            <div id="scheduleTimelineCardsList"></div>
+        </div>
+
+        <div id="section-booking" class="page-section">
+            <div class="section-header">
+                <h2>預約內容</h2>
+                <button class="btn-add-global" onclick="openAddModal('booking')"><i class="fa-solid fa-plus"></i> 新增</button>
+            </div>
+            <div id="bookingCardsListZone"></div>
+        </div>
+
+        <div id="section-ledger" class="page-section">
+            <div class="live-rate-banner-box">
+                <div class="rate-calculator-title"><i class="fa-solid fa-calculator"></i> 日圓即時換算港幣工具</div>
+                <div class="rate-calc-row">
+                    <input type="number" class="rate-calc-input" id="rateCalcJpyInput" value="1000" oninput="calculateLiveCurrency()"/>
+                    <span class="rate-calc-equal">JPY ＝</span>
+                    <span class="rate-calc-result-text" id="rateCalcHkdResult">$49.1 HKD</span>
+                </div>
+                <div class="rate-update-stamp-text">當前匯率 JPY 1 = 0.0491 HKD (即時更新時間：2026/05/27)</div>
+            </div>
+
+            <div class="ledger-total-dashboard">
+                <div style="font-size: 0.85rem; color: var(--text-sub); font-weight: bold;">旅程累積總花費 (港幣)</div>
+                <div class="ledger-main-spend-hkd" id="totalSpendHkdDisplay">$0.0 HKD</div>
+                <div class="ledger-sub-spend-jpy" id="totalSpendJpyDisplay">JPY 總計: ¥0</div>
+                
+                <div class="payment-split-grid">
+                    <div class="payment-split-item" id="split-cash">💵 現金: $0 (¥0)</div>
+                    <div class="payment-split-item" id="split-card">💳 信用卡: $0 (¥0)</div>
+                    <div class="payment-split-item" id="split-alipay">📱 支付寶: $0 (¥0)</div>
+                    <div class="payment-split-item" id="split-other">💼 其他: $0 (¥0)</div>
+                </div>
+            </div>
+
+            <div class="filter-tabs-scroll">
+                <button class="filter-pill-btn active" onclick="filterLedger('全部', this)">全部</button>
+                <button class="filter-pill-btn" onclick="filterLedger('現金', this)">現金</button>
+                <button class="filter-pill-btn" onclick="filterLedger('信用卡', this)">信用卡</button>
+                <button class="filter-pill-btn" onclick="filterLedger('支付寶', this)">支付寶</button>
+                <button class="filter-pill-btn" onclick="filterLedger('其他', this)">其他</button>
+            </div>
+
+            <div class="section-header">
+                <h3>記帳明細列表</h3>
+                <button class="btn-add-global" onclick="openAddModal('ledger')"><i class="fa-solid fa-plus"></i> 記一筆</button>
+            </div>
+
+            <div id="ledgerItemsContainerList"></div>
+        </div>
+
+        <div id="section-shopping" class="page-section">
+            <div class="section-header">
+                <div>
+                    <h2>購物清單</h2>
+                    <p style="font-size: 0.78rem; color: var(--text-sub);">記錄想買的日本好物</p>
+                </div>
+                <button class="btn-add-global" onclick="openAddModal('shopping')"><i class="fa-solid fa-plus"></i> 新增</button>
+            </div>
+
+            <div class="shopping-stats-row">
+                <div class="shop-stat-card">
+                    <div>
+                        <div style="font-size:0.75rem; color:var(--text-sub);">待購買</div>
+                        <div class="shop-stat-number" id="count-to-buy">0</div>
+                    </div>
+                    <i class="fa-solid fa-cart-shopping" style="color: var(--primary); font-size:1.4rem;"></i>
+                </div>
+                <div class="shop-stat-card">
+                    <div>
+                        <div style="font-size:0.75rem; color:var(--text-sub);">已購買</div>
+                        <div class="shop-stat-number" id="count-purchased">0</div>
+                    </div>
+                    <i class="fa-solid fa-bag-shopping" style="color: var(--tag-spot); font-size:1.4rem;"></i>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+                <select class="form-control-select" style="width: auto; font-size:0.8rem; padding:4px 8px;" id="shoppingFilterDropdown" onchange="renderShoppingList()">
+                    <option value="全部">全部項目</option>
+                    <option value="藥妝">藥妝</option>
+                    <option value="零食">零食</option>
+                    <option value="電器">電器</option>
+                    <option value="服飾">服飾</option>
+                    <option value="紀念品">紀念品</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+
+            <div id="shoppingItemCardsListZone"></div>
+        </div>
+
+        <div id="section-prep" class="page-section">
+            <div class="section-header">
+                <h2>準備清單</h2>
+                <button class="btn-add-global" onclick="openAddModal('prep')"><i class="fa-solid fa-plus"></i> 新增</button>
+            </div>
+
+            <div class="prep-static-card">
+                <div class="prep-static-title">
+                    <i class="fa-solid fa-passport"></i> VISIT JAPAN WEB 連接
+                    <a href="https://vjw-lp.digital.go.jp/zh-hant/" target="_blank" class="nav-circle-btn" style="margin-left:auto;"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                </div>
+                <p style="font-size:0.8rem; color:var(--text-sub); margin-bottom:10px;">點擊右側圖示前往官網。下方可上載儲存 2 個離線通關 QR Code 圖檔：</p>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div>
+                        <div class="qr-upload-placeholder-zone" id="qrContainer-1" onclick="document.getElementById('qrOneFileInput').click()">
+                            <span id="qrText-1">📷 上載入境審查 QR</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="qr-upload-placeholder-zone" id="qrContainer-2" onclick="document.getElementById('qrTwoFileInput').click()">
+                            <span id="qrText-2">📷 上載海關申報 QR</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prep-static-card">
+                <div class="prep-static-title"><i class="fa-solid fa-heart-pulse"></i> 🚨 日本緊急與醫療求助</div>
+                <div class="emergency-grid-box">
+                    <div class="emergency-btn-item">🚑 救護消防: 119</div>
+                    <div class="emergency-btn-item">🚓 警察局報警: 110</div>
+                </div>
+                <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:10px;">
+                    <p style="font-size:0.82rem; font-weight:bold; color:var(--text-main); margin-bottom:4px;">🌸 日本線上看醫生 (Oh-Doctor)</p>
+                    <a href="https://oh-doctor.com/zh-tw/oh-traveler-dr-tw/" target="_blank" style="font-size:0.75rem; color:var(--primary); word-break:break-all; display:block; margin-bottom:8px;">https://oh-doctor.com/zh-tw/oh-traveler-dr-tw/</a>
+                    
+                    <p style="font-size:0.82rem; font-weight:bold; color:var(--text-main); margin-bottom:4px;">🌏 JNTO 醫療機構（支援中英文診所搜尋）</p>
+                    <a href="https://www.jnto.go.jp/emergency/chc/mi_guide.html" target="_blank" style="font-size:0.75rem; color:var(--primary); word-break:break-all; display:block;">https://www.jnto.go.jp/emergency/chc/mi_guide.html</a>
+                </div>
+            </div>
+
+            <div id="prepItemsVerticalListZone"></div>
+        </div>
+
+        <div id="section-member" class="page-section">
+            <div class="section-header">
+                <h2>探索夥伴成員</h2>
+                <button class="btn-add-global" onclick="openAddModal('member')"><i class="fa-solid fa-plus"></i> 增加</button>
+            </div>
+            <div id="memberRowsCardsContainer"></div>
+        </div>
+
+    </div> 
+
+    <div class="bottom-nav-bar">
+        <button class="nav-item-btn active" id="nav-btn-schedule" onclick="switchMainTab('schedule')">
+            <i class="fa-solid fa-calendar-days"></i><span>行程</span>
+        </button>
+        <button class="nav-item-btn" id="nav-btn-booking" onclick="switchMainTab('booking')">
+            <i class="fa-solid fa-ticket"></i><span>預約</span>
+        </button>
+        <button class="nav-item-btn" id="nav-btn-ledger" onclick="switchMainTab('ledger')">
+            <i class="fa-solid fa-coins"></i><span>記帳</span>
+        </button>
+        <button class="nav-item-btn" id="nav-btn-shopping" onclick="switchMainTab('shopping')">
+            <i class="fa-solid fa-bag-shopping"></i><span>購物</span>
+        </button>
+        <button class="nav-item-btn" id="nav-btn-prep" onclick="switchMainTab('prep')">
+            <i class="fa-solid fa-clipboard-list"></i><span>準備</span>
+        </button>
+        <button class="nav-item-btn" id="nav-btn-member" onclick="switchMainTab('member')">
+            <i class="fa-solid fa-users"></i><span>成員</span>
+        </button>
+    </div>
+
+    <div class="sticker-magic-trigger" onclick="document.getElementById('stickerUploadFileInput').click()" title="加入本頁手帳功能小貼紙">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+    </div>
+
+</div> 
+
+<div class="modal-overlay-bg" id="globalFormModalOverlay">
+    <div class="modal-form-window">
+        <h3 id="modalDynamicTitle">編輯資料欄位</h3>
+        <div id="modalFormDynamicFieldsRoot"></div>
+        
+        <div class="modal-action-row">
+            <div class="modal-double-buttons">
+                <button class="btn-action-submit" onclick="saveModalFormDataEntry()">儲存</button>
+                <button class="btn-action-cancel" onclick="closeFormModal()">取消</button>
+            </div>
+            <button class="btn-action-delete-danger" id="modalDeleteBtnRow" onclick="deleteModalDataEntry()">刪除項目</button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+// --- 全域資料狀態庫 ---
+let currentActiveTab = 'schedule';
+let selectedScheduleDayIndex = 0;
+
+// 預設 6月11日 至 6月17日 對照表
+const defaultTravelDays = [
+    { monthStr: "6月", dayNum: "11", dayName: "週四", dateStr: "2026-06-11", city: "Tokyo", temp: "27°C (體感 30°C)", desc: "Sunny", icon: "☀️" },
+    { monthStr: "6月", dayNum: "12", dayName: "週五", dateStr: "2026-06-12", city: "Izu", temp: "24°C (體感 25°C)", desc: "Cloudy", icon: "☁️" },
+    { monthStr: "6月", dayNum: "13", dayName: "週六", dateStr: "2026-06-13", city: "Izu", temp: "22°C (體感 21°C)", desc: "Rainy", icon: "🌧️" },
+    { monthStr: "6月", dayNum: "14", dayName: "週日", dateStr: "2026-06-14", city: "Nagoya", temp: "26°C (體感 28°C)", desc: "Sunny", icon: "☀️" },
+    { monthStr: "6月", dayNum: "15", dayName: "週一", dateStr: "2026-06-15", city: "Suzuka", temp: "25°C (體感 25°C)", desc: "Windy", icon: "🍃" },
+    { monthStr: "6月", dayNum: "16", dayName: "週二", dateStr: "2026-06-16", city: "Tokyo", temp: "28°C (體感 31°C)", desc: "Sunny", icon: "☀️" },
+    { monthStr: "6月", dayNum: "17", dayName: "週三", dateStr: "2026-06-17", city: "Tokyo", temp: "26°C (體感 27°C)", desc: "Overcast", icon: "☁️" }
+];
+
+// 初始化虛擬資料庫
+let appDatabase = {
+    days: JSON.parse(JSON.stringify(defaultTravelDays)),
+    schedule: [
+        { id: "s_1", day: 0, time: "10:30", category: "📷 景點", title: "成田國際機場第一航廈", address: "日本千葉縣成田市三里塚御料牧場1-1", priority_park: "第1航廈P1地下停車場", priority_nav: "https://maps.google.com", fallback_park: "P5預約專用外圍車位", fallback_nav: "https://maps.google.com", hours: "24小時", desc: "換JR Pass與取網卡", note: "" }
+    ],
+    booking: [
+        { id: "b_1", type: "Flight", name: "香港航空", code: "HX610", depart: "HKG", arrive: "NRT", flightNum: "HX610", date: "2026-06-11", departTime: "15:30", arriveTime: "21:00", note: "登機門於出發前兩小時確認" }
+    ],
+    ledger: [
+        { id: "l_1", date: "2026-06-11", item: "敘敘苑燒肉晚餐", category: "食物", amount: 8500, payMethod: "信用卡" },
+        { id: "l_2", date: "2026-06-11", item: "松本清藥妝面膜", category: "購物", amount: 3200, payMethod: "支付寶" }
+    ],
+    shopping: [
+        { id: "sh_1", name: "大正感冒藥 Gold A", note: "Donki 藥妝店", category: "藥妝", priority: "重要", checked: false, image: "" }
+    ],
+    prep: [
+        { id: "p_1", name: "換日圓現金 5 萬", checked: false }
+    ],
+    member: [
+        { id: "m_1", name: "卡莉 Carly", role: "行程總理、總務記帳官", image: "" }
+    ],
+    stickers: []
+};
+
+let activeEditingTargetMeta = { scope: '', id: null };
+
+// 輔助：根據 YYYY-MM-DD 解析出星期、月、日
+function parseDateDetails(dateStr) {
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return { monthStr: "", dayNum: "01", dayName: "週一" };
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    const d = new Date(year, month - 1, day);
+    const weekDays = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
+    return {
+        monthStr: `${month}月`,
+        dayNum: day.toString().padStart(2, '0'),
+        dayName: weekDays[d.getDay()]
+    };
+}
+
+// --- 網頁載入時初始化 ---
+document.addEventListener("DOMContentLoaded", () => {
+    if(localStorage.getItem("ins_travel_db")) {
+        try {
+            const parsed = JSON.parse(localStorage.getItem("ins_travel_db"));
+            appDatabase = Object.assign(appDatabase, parsed);
+            if (!appDatabase.days || !Array.isArray(appDatabase.days) || appDatabase.days.length === 0) {
+                appDatabase.days = JSON.parse(JSON.stringify(defaultTravelDays));
+            }
+        } catch(e){}
+    }
+    
+    initCoverBannerActions();
+    initCountdownTimer();
+    renderDateCarousel();
+    renderAllViews();
+    calculateLiveCurrency();
+});
+
+function syncLocalStorage() {
+    localStorage.setItem("ins_travel_db", JSON.stringify(appDatabase));
+}
+
+// --- 1. 封面背景與標題編輯恢復功能 ---
+function initCoverBannerActions() {
+    const banner = document.getElementById("mainCoverBanner");
+    const fileInput = document.getElementById("coverImageFileInput");
+
+    banner.addEventListener("click", (e) => {
+        if(e.target.id === "editableCoverTitle" || e.target.id === "editableCoverSub") return;
+        fileInput.click();
+    });
+
+    fileInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                banner.style.backgroundImage = `linear-gradient(rgba(223,152,152,0.25), rgba(255,251,247,1)), url('${evt.target.result}')`;
+                localStorage.setItem("custom_cover_image_base64", evt.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    const savedImg = localStorage.getItem("custom_cover_image_base64");
+    if(savedImg) banner.style.backgroundImage = `linear-gradient(rgba(223,152,152,0.25), rgba(255,251,247,1)), url('${savedImg}')`;
+    
+    const savedTitle = localStorage.getItem("custom_title_text");
+    if(savedTitle) document.getElementById("editableCoverTitle").innerText = savedTitle;
+    
+    const savedSub = localStorage.getItem("custom_sub_text");
+    if(savedSub) document.getElementById("editableCoverSub").innerText = savedSub;
+}
+
+function makeEditable(el, type) {
+    el.contentEditable = "true";
+    el.focus();
+    el.addEventListener("blur", () => {
+        el.contentEditable = "false";
+        localStorage.setItem(type === 'title' ? "custom_title_text" : "custom_sub_text", el.innerText.trim());
+    });
+    el.addEventListener("keydown", (e) => {
+        if(e.key === "Enter") { e.preventDefault(); el.blur(); }
+    });
+}
+
+// --- 香港時間實時精確倒數計時器 ---
+function initCountdownTimer() {
+    const firstDayStr = (appDatabase.days && appDatabase.days[0]) ? appDatabase.days[0].dateStr : "2026-06-11";
+    
+    setInterval(() => {
+        const currentFirstDay = (appDatabase.days && appDatabase.days[0]) ? appDatabase.days[0].dateStr : "2026-06-11";
+        const dynamicTarget = new Date(`${currentFirstDay}T15:30:00+08:00`).getTime();
+        const now = new Date().getTime();
+        const diff = dynamicTarget - now;
+        
+        if (diff <= 0) {
+            document.getElementById("countdownTimeDisplay").innerText = "✈️ 已經快樂出發囉！";
+            return;
+        }
+        
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        document.getElementById("countdownTimeDisplay").innerText = 
+            `${days}天 ${hours.toString().padStart(2,'0')}時 ${minutes.toString().padStart(2,'0')}分 ${seconds.toString().padStart(2,'0')}秒`;
+    }, 1000);
+}
+
+// --- 導航主分頁切換 ---
+function switchMainTab(tabId) {
+    currentActiveTab = tabId;
+    document.querySelectorAll(".page-section").forEach(sec => sec.classList.remove("active"));
+    document.querySelectorAll(".nav-item-btn").forEach(btn => btn.classList.remove("active"));
+    
+    document.getElementById(`section-${tabId}`).classList.add("active");
+    document.getElementById(`nav-btn-${tabId}`).classList.add("active");
+    
+    const headerBannerBox = document.getElementById("globalHeaderBannerRegion");
+    if(tabId === 'schedule') {
+        headerBannerBox.style.display = 'block';
+    } else {
+        headerBannerBox.style.display = 'none';
+    }
+    
+    renderStickersOnCurrentView();
+}
+
+// ==========================================
+// 日期滑動導覽列產生器（支援點擊切換、雙點擊修改、＋新增日）
+// ==========================================
+function renderDateCarousel() {
+    const container = document.getElementById("scheduleDateTabsCarousel");
+    container.innerHTML = '';
+
+    if (selectedScheduleDayIndex >= appDatabase.days.length) {
+        selectedScheduleDayIndex = Math.max(0, appDatabase.days.length - 1);
+    }
+    
+    appDatabase.days.forEach((item, index) => {
+        const parsed = parseDateDetails(item.dateStr);
+        const tab = document.createElement("div");
+        tab.className = `date-tab ${index === selectedScheduleDayIndex ? 'active' : ''}`;
+        
+        // 單擊切換天數
+        tab.onclick = () => {
+            selectedScheduleDayIndex = index;
+            renderDateCarousel();
+            renderScheduleTimeline();
+            renderStickersOnCurrentView();
+        };
+
+        // 雙點擊該日期卡片可直接開啟設定視窗手動更改日期
+        tab.ondblclick = (e) => {
+            e.stopPropagation();
+            selectedScheduleDayIndex = index;
+            openDayMetaModal();
+        };
+        tab.title = "雙擊此卡片可直接修改日期";
+        
+        tab.innerHTML = `
+            <span class="day-name">${parsed.dayName}</span>
+            <span class="day-num">${parsed.dayNum}</span>
+            <span class="month-badge">${parsed.monthStr}</span>
+        `;
+        container.appendChild(tab);
+    });
+
+    // 在滑動列尾端加入「+ 新增一天」按鈕
+    const addTab = document.createElement("div");
+    addTab.className = "date-tab-add";
+    addTab.title = "增加新的行程日期頁面";
+    addTab.onclick = () => addNewTravelDay();
+    addTab.innerHTML = `
+        <i class="fa-solid fa-plus"></i>
+        <span>新增日</span>
+    `;
+    container.appendChild(addTab);
+}
+
+// 增加一個新的行程日期頁面
+function addNewTravelDay() {
+    let nextDateStr = "2026-06-18";
+    let defaultCity = "Tokyo";
+
+    if (appDatabase.days.length > 0) {
+        const lastDay = appDatabase.days[appDatabase.days.length - 1];
+        defaultCity = lastDay.city || "Tokyo";
+        const parts = lastDay.dateStr.split('-');
+        if (parts.length === 3) {
+            const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            d.setDate(d.getDate() + 1);
+            const y = d.getFullYear();
+            const m = (d.getMonth() + 1).toString().padStart(2, '0');
+            const day = d.getDate().toString().padStart(2, '0');
+            nextDateStr = `${y}-${m}-${day}`;
+        }
+    }
+
+    const parsed = parseDateDetails(nextDateStr);
+    appDatabase.days.push({
+        monthStr: parsed.monthStr,
+        dayNum: parsed.dayNum,
+        dayName: parsed.dayName,
+        dateStr: nextDateStr,
+        city: defaultCity,
+        temp: "25°C (體感 26°C)",
+        desc: "Sunny",
+        icon: "☀️"
+    });
+
+    selectedScheduleDayIndex = appDatabase.days.length - 1;
+    syncLocalStorage();
+    renderDateCarousel();
+    renderScheduleTimeline();
+    renderStickersOnCurrentView();
+
+    setTimeout(() => {
+        const carousel = document.getElementById("scheduleDateTabsCarousel");
+        carousel.scrollTo({ left: carousel.scrollWidth, behavior: 'smooth' });
+    }, 50);
+}
+
+// 開啟當天「更改日期 / 城市天氣 / 刪減天數」編輯彈窗
+function openDayMetaModal() {
+    const currentDay = appDatabase.days[selectedScheduleDayIndex];
+    if (!currentDay) return;
+
+    activeEditingTargetMeta = { scope: 'dayMeta', id: selectedScheduleDayIndex };
+    document.getElementById("modalDynamicTitle").innerText = `Day ${selectedScheduleDayIndex + 1} 日期與天氣設定`;
+    
+    const delBtn = document.getElementById("modalDeleteBtnRow");
+    if (appDatabase.days.length > 1) {
+        delBtn.style.display = "block";
+        delBtn.innerText = `刪除此天數頁面 (Day ${selectedScheduleDayIndex + 1})`;
+    } else {
+        delBtn.style.display = "none";
+    }
+
+    const root = document.getElementById("modalFormDynamicFieldsRoot");
+    root.innerHTML = `
+        <div class="form-group-item">
+            <label>更改日期 (手動選擇)*</label>
+            <input type="date" id="field-day-date" class="form-control-input" value="${currentDay.dateStr}"/>
+        </div>
+        <div class="form-group-item">
+            <label>所在城市 / 地區名稱</label>
+            <input type="text" id="field-day-city" class="form-control-input" value="${escapeHtml(currentDay.city)}" placeholder="例如：Tokyo、Hokkaido"/>
+        </div>
+        <div class="form-group-item">
+            <label>天氣圖示</label>
+            <select id="field-day-icon" class="form-control-select">
+                <option value="☀️" ${currentDay.icon==='☀️'?'selected':''}>☀️ 晴朗 (Sunny)</option>
+                <option value="⛅" ${currentDay.icon==='⛅'?'selected':''}>⛅ 多雲時晴 (Partly Cloudy)</option>
+                <option value="☁️" ${currentDay.icon==='☁️'?'selected':''}>☁️ 陰天 (Cloudy)</option>
+                <option value="🌧️" ${currentDay.icon==='🌧️'?'selected':''}>🌧️ 下雨 (Rainy)</option>
+                <option value="❄️" ${currentDay.icon==='❄️'?'selected':''}>❄️ 下雪 (Snowy)</option>
+                <option value="🍃" ${currentDay.icon==='🍃'?'selected':''}>🍃 微風 (Windy)</option>
+            </select>
+        </div>
+        <div class="form-group-item">
+            <label>天氣描述</label>
+            <input type="text" id="field-day-desc" class="form-control-input" value="${escapeHtml(currentDay.desc)}" placeholder="例如：Sunny"/>
+        </div>
+        <div class="form-group-item">
+            <label>氣溫顯示</label>
+            <input type="text" id="field-day-temp" class="form-control-input" value="${escapeHtml(currentDay.temp)}" placeholder="例如：27°C (體感 30°C)"/>
+        </div>
+    `;
+
+    document.getElementById("globalFormModalOverlay").style.display = "flex";
+}
+
+// --- 渲染核心控制中樞 ---
+function renderAllViews() {
+    renderScheduleTimeline();
+    renderBookingList();
+    renderLedgerList();
+    renderShoppingList();
+    renderPrepList();
+    renderMemberList();
+    renderStickersOnCurrentView();
+    initStickerUploadCenter();
+}
+
+// ==========================================
+// 核心 A：行程頁面渲染引擎
+// ==========================================
+function renderScheduleTimeline() {
+    const container = document.getElementById("scheduleTimelineCardsList");
+    container.innerHTML = '';
+    
+    const activeMeta = appDatabase.days[selectedScheduleDayIndex] || appDatabase.days[0];
+    const parsed = parseDateDetails(activeMeta.dateStr);
+    const formattedDateSlash = activeMeta.dateStr.replace(/-/g, '/');
+
+    document.getElementById("bigDayNumberLabel").innerText = `Day ${selectedScheduleDayIndex + 1}`;
+    document.getElementById("subDateFullLabel").innerText = `${formattedDateSlash} (${parsed.dayName})`;
+    document.getElementById("weatherIconDisplay").innerText = activeMeta.icon || "☀️";
+    document.getElementById("weatherTempDisplay").innerText = activeMeta.temp || "25°C";
+    document.getElementById("weatherDescCityDisplay").innerText = `${activeMeta.desc || 'Sunny'} · ${activeMeta.city || 'Japan'}`;
+
+    let dailyItems = appDatabase.schedule.filter(item => parseInt(item.day) === selectedScheduleDayIndex);
+    dailyItems.sort((a,b) => a.time.localeCompare(b.time));
+    
+    if(dailyItems.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-sub); font-size:0.85rem;">🌸 今天目前沒有排行程活動，點擊上方「新增」來規劃吧！</div>`;
+    }
+
+    dailyItems.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "schedule-card";
+        
+        let tagColorVar = "--tag-spot";
+        if(item.category.includes("餐廳")) tagColorVar = "--tag-food";
+        if(item.category.includes("交通")) tagColorVar = "--tag-transport";
+        if(item.category.includes("住宿")) tagColorVar = "--tag-hotel";
+        if(item.category.includes("購物")) tagColorVar = "--tag-shopping";
+
+        card.innerHTML = `
+            <button class="card-edit-pen-btn" onclick="openEditModal('schedule', '${item.id}')"><i class="fa-solid fa-pen"></i></button>
+            <div class="schedule-time-badge"><i class="fa-regular fa-clock"></i> ${item.time || '--:--'}</div>
+            
+            <div class="schedule-main-box" style="border-left-color: var(${tagColorVar});">
+                <div class="schedule-category-tag" style="background-color: var(${tagColorVar});">${item.category}</div>
+                
+                <div class="schedule-title-row">
+                    <div>
+                        <div class="schedule-spot-name">${escapeHtml(item.title)}</div>
+                        <div class="schedule-spot-address">${escapeHtml(item.address || '尚未填寫導航地址')}</div>
+                    </div>
+                    ${item.address ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.address)}" target="_blank" class="nav-circle-btn" style="align-self: flex-start; margin-top:2px;" title="地址導航"><i class="fa-solid fa-diamond-turn-right"></i></a>` : ''}
+                </div>
+
+                <div class="parking-container">
+                    <div class="parking-row">
+                        <div>
+                            <span class="parking-label">優先停車：</span>
+                            <span class="parking-val">${escapeHtml(item.priority_park || '無')}</span>
+                        </div>
+                        ${item.priority_nav ? `<a href="${ensureValidUrl(item.priority_nav)}" target="_blank" class="nav-circle-btn" style="width:22px; height:22px; font-size:0.7rem;" title="優先停車導航"><i class="fa-solid fa-location-arrow"></i></a>` : ''}
+                    </div>
+                    <div class="parking-row">
+                        <div>
+                            <span class="parking-label">候補停車：</span>
+                            <span class="parking-val">${escapeHtml(item.fallback_park || '無')}</span>
+                        </div>
+                        ${item.fallback_nav ? `<a href="${ensureValidUrl(item.fallback_nav)}" target="_blank" class="nav-circle-btn" style="width:22px; height:22px; font-size:0.7rem;" title="候補停車導航"><i class="fa-solid fa-location-arrow"></i></a>` : ''}
+                    </div>
+                </div>
+
+                ${item.hours ? `<div style="font-size:0.75rem; color:var(--text-sub); margin-top:6px;"><i class="fa-regular fa-clock"></i> 營業時間: ${escapeHtml(item.hours)}</div>` : ''}
+                ${item.desc ? `<div style="font-size:0.75rem; color:var(--text-main); margin-top:4px; font-style:italic;">✨ 特色: ${escapeHtml(item.desc)}</div>` : ''}
+                ${item.note ? `<div style="font-size:0.75rem; color:var(--primary); margin-top:4px;"><i class="fa-solid fa-memo"></i> 備註: ${escapeHtml(item.note)}</div>` : ''}
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    const appendBtnBox = document.createElement("div");
+    appendBtnBox.style.margin = "10px 0 20px 0";
+    appendBtnBox.innerHTML = `
+        <button onclick="openAddModal('schedule')" style="width:100%; padding:12px; background-color:var(--card-bg); border:2px dashed var(--primary); border-radius:var(--radius-card); color:var(--primary); font-weight:bold; cursor:pointer; font-size:0.9rem;">
+            <i class="fa-solid fa-plus-circle"></i> ＋ 新增行程活動
+        </button>
+    `;
+    container.appendChild(appendBtnBox);
+}
+
+// ==========================================
+// 核心 B：預約內容頁面渲染
+// ==========================================
+function renderBookingList() {
+    const container = document.getElementById("bookingCardsListZone");
+    container.innerHTML = '';
+    
+    if(appDatabase.booking.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-sub); font-size:0.85rem;">🌸 目前沒有任何機票或預約項目。</div>`;
+        return;
+    }
+
+    appDatabase.booking.forEach(item => {
+        if(item.type === 'Flight') {
+            const bpCard = document.createElement("div");
+            bpCard.className = "ticket-boarding-pass";
+            bpCard.innerHTML = `
+                <div class="ticket-top-pink">
+                    <h3>✈️ BOARDING PASS</h3>
+                    <div style="cursor:pointer;" onclick="openEditModal('booking', '${item.id}')"><i class="fa-solid fa-ellipsis"></i></div>
+                </div>
+                <div class="ticket-main-body">
+                    <div class="airport-code-box">
+                        <h4>${escapeHtml(item.depart || 'HKG')}</h4>
+                        <p>出發地機場</p>
+                    </div>
+                    <div class="flight-center-plane" onclick="window.open('https://www.hongkongairlines.com', '_blank')">
+                        <i class="fa-solid fa-plane plane-icon"></i>
+                        <div><span class="flight-number-badge">${escapeHtml(item.flightNum || 'CX596')}</span></div>
+                    </div>
+                    <div class="airport-code-box" style="text-align:right;">
+                        <h4>${escapeHtml(item.arrive || 'NRT')}</h4>
+                        <p>抵達地機場</p>
+                    </div>
+                </div>
+                <div class="ticket-dotted-divider"></div>
+                <div class="ticket-footer-info">
+                    <div>航空商: <strong>${escapeHtml(item.name)}</strong></div>
+                    <div>出發日期: <strong>${item.date} (${item.departTime || '00:00'})</strong></div>
+                </div>
+                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.arrive + ' Airport')}" target="_blank" class="nav-circle-btn" style="position:absolute; bottom:8px; right:8px; width:22px; height:22px; font-size:0.65rem;" title="機場地圖導航"><i class="fa-solid fa-location-dot"></i></a>
+            `;
+            container.appendChild(bpCard);
+        } else {
+            let bIcon = "🏨";
+            if(item.type === 'Car') bIcon = "🚗";
+            if(item.type === 'Restaurant') bIcon = "🍽️";
+
+            const card = document.createElement("div");
+            card.className = "schedule-card";
+            card.innerHTML = `
+                <button class="card-edit-pen-btn" onclick="openEditModal('booking', '${item.id}')"><i class="fa-solid fa-ellipsis"></i></button>
+                <div style="font-weight:bold; font-size:1.1rem; color:var(--text-main); margin-bottom:4px;">${bIcon} ${item.type.toUpperCase()} · ${escapeHtml(item.name)}</div>
+                <div style="font-size:0.8rem; color:var(--text-sub);">預約編號: ${escapeHtml(item.code || '選填')}</div>
+                ${item.addr ? `<div style="font-size:0.8rem; color:var(--text-main); margin-top:6px;"><i class="fa-solid fa-map-marker-alt"></i> 地址: ${escapeHtml(item.addr)}</div>` : ''}
+                <div style="font-size:0.75rem; color:var(--text-sub); margin-top:4px;"><i class="fa-regular fa-clock"></i> 時間安排: ${escapeHtml(item.timeStr || '')}</div>
+                ${item.note ? `<div style="font-size:0.75rem; color:var(--primary); margin-top:4px; font-style:italic;">備註: ${escapeHtml(item.note)}</div>` : ''}
+            `;
+            container.appendChild(card);
+        }
+    });
+}
+
+// ==========================================
+// 核心 C：記帳頁面即時計算與分流
+// ==========================================
+function calculateLiveCurrency() {
+    const jpyVal = parseFloat(document.getElementById("rateCalcJpyInput").value) || 0;
+    const rate = 0.0491;
+    const hkdRes = (jpyVal * rate).toFixed(1);
+    document.getElementById("rateCalcHkdResult").innerText = `$${hkdRes} HKD`;
+}
+
+let ledgerFilterMethod = '全部';
+function filterLedger(method, btnEl) {
+    ledgerFilterMethod = method;
+    document.querySelectorAll(".filter-pill-btn").forEach(b => b.classList.remove("active"));
+    btnEl.classList.add("active");
+    renderLedgerList();
+}
+
+function renderLedgerList() {
+    const container = document.getElementById("ledgerItemsContainerList");
+    container.innerHTML = '';
+    
+    let filtered = appDatabase.ledger;
+    if(ledgerFilterMethod !== '全部') {
+        filtered = appDatabase.ledger.filter(item => item.payMethod === ledgerFilterMethod);
+    }
+
+    let totalJpy = 0;
+    let sumSplit = { "現金": 0, "信用卡": 0, "支付寶": 0, "其他": 0 };
+    
+    appDatabase.ledger.forEach(item => {
+        totalJpy += parseFloat(item.amount) || 0;
+        if(sumSplit[item.payMethod] !== undefined) {
+            sumSplit[item.payMethod] += parseFloat(item.amount) || 0;
+        } else {
+            sumSplit["其他"] += parseFloat(item.amount) || 0;
+        }
+    });
+
+    const rate = 0.0491;
+    document.getElementById("totalSpendHkdDisplay").innerText = `$ ${(totalJpy * rate).toFixed(1)} HKD`;
+    document.getElementById("totalSpendJpyDisplay").innerText = `JPY 總計: ¥ ${totalJpy.toLocaleString()}`;
+    
+    document.getElementById("split-cash").innerText = `💵 現金: $ ${(sumSplit["現金"]*rate).toFixed(1)} (¥${sumSplit["現金"]})`;
+    document.getElementById("split-card").innerText = `💳 信用卡: $ ${(sumSplit["信用卡"]*rate).toFixed(1)} (¥${sumSplit["信用卡"]})`;
+    document.getElementById("split-alipay").innerText = `📱 支付寶: $ ${(sumSplit["支付寶"]*rate).toFixed(1)} (¥${sumSplit["支付寶"]})`;
+    document.getElementById("split-other").innerText = `💼 其他: $ ${(sumSplit["其他"]*rate).toFixed(1)} (¥${sumSplit["其他"]})`;
+
+    if(filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-sub); font-size:0.82rem;">沒有該分類的消費明細。</div>`;
+        return;
+    }
+
+    let dateGroups = {};
+    filtered.forEach(item => {
+        if(!dateGroups[item.date]) dateGroups[item.date] = [];
+        dateGroups[item.date].push(item);
+    });
+
+    Object.keys(dateGroups).sort().forEach(dateStr => {
+        const header = document.createElement("div");
+        header.className = "ledger-date-group-header";
+        header.innerText = dateStr;
+        container.appendChild(header);
+
+        dateGroups[dateStr].forEach(item => {
+            const card = document.createElement("div");
+            card.className = "ledger-item-card";
+            
+            let icon = "🍴"; let bg = "rgba(243,169,113,0.15)";
+            if(item.category === '購物') { icon = "🛍️"; bg = "rgba(234,144,177,0.15)"; }
+
+            card.innerHTML = `
+                <div style="display:flex; align-items:center;">
+                    <div class="ledger-left-icon-box" style="background-color:${bg};">${icon}</div>
+                    <div class="ledger-mid-details">
+                        <h4>${escapeHtml(item.item)}</h4>
+                        <p>${item.payMethod}付款</p>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="ledger-right-amounts">
+                        <div class="ledger-jpy-big">¥ ${item.amount}</div>
+                        <div class="ledger-hkd-sub">(約 $ ${(item.amount * rate).toFixed(1)} HKD)</div>
+                    </div>
+                    <button class="card-edit-pen-btn" style="position:static;" onclick="openEditModal('ledger', '${item.id}')"><i class="fa-solid fa-pen"></i></button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    });
+}
+
+// ==========================================
+// 核心 D：購物清單渲染引擎
+// ==========================================
+function renderShoppingList() {
+    const container = document.getElementById("shoppingItemCardsListZone");
+    container.innerHTML = '';
+    
+    const filter = document.getElementById("shoppingFilterDropdown").value;
+    let filtered = appDatabase.shopping;
+    if(filter !== '全部') filtered = appDatabase.shopping.filter(i => i.category === filter);
+
+    let toBuyCount = appDatabase.shopping.filter(i => !i.checked).length;
+    let doneCount = appDatabase.shopping.filter(i => i.checked).length;
+    document.getElementById("count-to-buy").innerText = toBuyCount;
+    document.getElementById("count-purchased").innerText = doneCount;
+
+    filtered.forEach(item => {
+        const card = document.createElement("div");
+        card.className = `product-item-card ${item.checked ? 'product-card-finished' : ''}`;
+        card.innerHTML = `
+            <div class="product-checkbox ${item.checked ? 'checked' : ''}" onclick="toggleShoppingStatus('${item.id}')"></div>
+            ${item.image ? `<img src="${item.image}" class="product-img-thumb"/>` : `<div class="product-img-thumb" style="display:flex; align-items:center; justify-content:center; color:var(--text-sub); font-size:0.75rem;">無圖</div>`}
+            <div class="product-mid-info">
+                <div class="product-name-txt">${escapeHtml(item.name)}</div>
+                <div class="product-tags-row">
+                    <span class="mini-pill-badge" style="background-color:var(--border); color:var(--text-main);">${item.category}</span>
+                    <span class="mini-pill-badge" style="background-color:${item.priority === '重要'?'#fbf0f0':'#fffbf7'}; color:${item.priority === '重要'?'var(--primary)':'var(--text-sub)'}; border:1px solid var(--border);">${item.priority}</span>
+                </div>
+                <div style="font-size:0.75rem; color:var(--text-sub);">${escapeHtml(item.note || '')}</div>
+            </div>
+            <button class="card-edit-pen-btn" onclick="openEditModal('shopping', '${item.id}')"><i class="fa-solid fa-pen"></i></button>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function toggleShoppingStatus(id) {
+    let target = appDatabase.shopping.find(i => i.id === id);
+    if(target) { target.checked = !target.checked; syncLocalStorage(); renderShoppingList(); }
+}
+
+// ==========================================
+// 核心 E：準備清單與二維碼上傳儲存
+// ==========================================
+function renderPrepList() {
+    const container = document.getElementById("prepItemsVerticalListZone");
+    container.innerHTML = '';
+
+    let list = [...appDatabase.prep];
+    list.sort((a, b) => a.checked - b.checked);
+
+    list.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "product-item-card";
+        if(item.checked) card.style.opacity = "0.5";
+
+        card.innerHTML = `
+            <input type="checkbox" ${item.checked ? 'checked' : ''} style="width:18px; height:18px; margin-right:12px; accent-color:var(--text-sub);" onclick="togglePrepStatus('${item.id}')"/>
+            <div style="flex:1; font-weight:bold; color:var(--text-main); ${item.checked ? 'text-decoration:line-through; color:var(--text-sub);' : ''}">${escapeHtml(item.name)}</div>
+            <button class="card-edit-pen-btn" style="position:static;" onclick="openEditModal('prep', '${item.id}')"><i class="fa-solid fa-pen"></i></button>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function togglePrepStatus(id) {
+    let target = appDatabase.prep.find(i => i.id === id);
+    if(target) { target.checked = !target.checked; syncLocalStorage(); renderPrepList(); }
+}
+
+function initStickerUploadCenter() {
+    ['qrOneFileInput', 'qrTwoFileInput'].forEach((id, idx) => {
+        const el = document.getElementById(id);
+        el.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    localStorage.setItem(`prep_qrcode_img_${idx+1}`, evt.target.result);
+                    document.getElementById(`qrContainer-${idx+1}`).innerHTML = `<img src="${evt.target.result}"/>`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        const savedQr = localStorage.getItem(`prep_qrcode_img_${idx+1}`);
+        if(savedQr) document.getElementById(`qrContainer-${idx+1}`).innerHTML = `<img src="${savedQr}"/>`;
+    });
+}
+
+// ==========================================
+// 核心 F：成員頁面渲染
+// ==========================================
+function renderMemberList() {
+    const container = document.getElementById("memberRowsCardsContainer");
+    container.innerHTML = '';
+    
+    appDatabase.member.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "member-row-card";
+        
+        let avatarSrc = item.image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80";
+        card.innerHTML = `
+            <img src="${avatarSrc}" class="member-avatar-img"/>
+            <div style="flex:1;">
+                <div class="member-name-txt">${escapeHtml(item.name)}</div>
+                <div class="member-role-txt">💼 職責: ${escapeHtml(item.role)}</div>
+            </div>
+            <button class="card-edit-pen-btn" style="position:static;" onclick="openEditModal('member', '${item.id}')"><i class="fa-solid fa-pen"></i></button>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// ==========================================
+// 核心 H：手帳功能貼紙系統 (全動態位置定位)
+// ==========================================
+document.getElementById("stickerUploadFileInput").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if(file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const newSticker = {
+                id: "st_" + Date.now(),
+                page: currentActiveTab,
+                day: currentActiveTab === 'schedule' ? selectedScheduleDayIndex : null,
+                src: evt.target.result,
+                x: 100, y: 150
+            };
+            appDatabase.stickers.push(newSticker);
+            syncLocalStorage();
+            renderStickersOnCurrentView();
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+function renderStickersOnCurrentView() {
+    document.querySelectorAll(".sticker-canvas-item").forEach(el => el.remove());
+    
+    let currentStickers = appDatabase.stickers.filter(s => {
+        if(s.page !== currentActiveTab) return false;
+        if(currentActiveTab === 'schedule' && s.day !== selectedScheduleDayIndex) return false;
+        return true;
+    });
+
+    currentStickers.forEach(sticker => {
+        const stEl = document.createElement("div");
+        stEl.className = "sticker-canvas-item";
+        stEl.style.left = sticker.x + "px";
+        stEl.style.top = sticker.y + "px";
+        stEl.innerHTML = `<img src="${sticker.src}"/>`;
+        
+        let isDragging = false;
+        let startX, startY;
+
+        stEl.addEventListener("mousedown", (e) => {
+            isDragging = true;
+            startX = e.clientX - stEl.offsetLeft;
+            startY = e.clientY - stEl.offsetTop;
+            e.stopPropagation();
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            if(!isDragging) return;
+            let targetX = e.clientX - startX;
+            let targetY = e.clientY - startY;
+            stEl.style.left = targetX + "px";
+            stEl.style.top = targetY + "px";
+            sticker.x = targetX;
+            sticker.y = targetY;
+        });
+
+        document.addEventListener("mouseup", () => {
+            if(isDragging) { isDragging = false; syncLocalStorage(); }
+        });
+
+        stEl.addEventListener("touchstart", (e) => {
+            isDragging = true;
+            let touch = e.touches[0];
+            startX = touch.clientX - stEl.offsetLeft;
+            startY = touch.clientY - stEl.offsetTop;
+            e.stopPropagation();
+        });
+
+        stEl.addEventListener("touchmove", (e) => {
+            if(!isDragging) return;
+            let touch = e.touches[0];
+            let targetX = touch.clientX - startX;
+            let targetY = touch.clientY - startY;
+            stEl.style.left = targetX + "px";
+            stEl.style.top = targetY + "px";
+            sticker.x = targetX;
+            sticker.y = targetY;
+        });
+
+        stEl.addEventListener("touchend", () => {
+            if(isDragging) { isDragging = false; syncLocalStorage(); }
+        });
+
+        stEl.addEventListener("dblclick", (e) => {
+            e.stopPropagation();
+            if(confirm("🌸 想要從當前頁面中移除這個功能貼紙嗎？")) {
+                appDatabase.stickers = appDatabase.stickers.filter(s => s.id !== sticker.id);
+                syncLocalStorage();
+                stEl.remove();
+            }
+        });
+
+        document.getElementById("appCanvas").appendChild(stEl);
+    });
+}
+
+// ==========================================
+// 核心 I：多功能萬用彈出表單引擎中心
+// ==========================================
+function openAddModal(scope) {
+    activeEditingTargetMeta = { scope: scope, id: null };
+    document.getElementById("modalDynamicTitle").innerText = `新增項目 - ${scope.toUpperCase()}`;
+    const delBtn = document.getElementById("modalDeleteBtnRow");
+    delBtn.style.display = "none";
+    delBtn.innerText = "刪除項目";
+    generateFormFields(scope, null);
+    document.getElementById("globalFormModalOverlay").style.display = "flex";
+}
+
+function openEditModal(scope, id) {
+    activeEditingTargetMeta = { scope: scope, id: id };
+    document.getElementById("modalDynamicTitle").innerText = `編輯項目 - ${scope.toUpperCase()}`;
+    const delBtn = document.getElementById("modalDeleteBtnRow");
+    delBtn.style.display = "block";
+    delBtn.innerText = "刪除項目";
+    
+    let currentData = appDatabase[scope].find(i => i.id === id);
+    generateFormFields(scope, currentData);
+    document.getElementById("globalFormModalOverlay").style.display = "flex";
+}
+
+function closeFormModal() {
+    document.getElementById("globalFormModalOverlay").style.display = "none";
+}
+
+function generateFormFields(scope, data) {
+    const root = document.getElementById("modalFormDynamicFieldsRoot");
+    root.innerHTML = '';
+
+    if(scope === 'schedule') {
+        root.innerHTML = `
+            <div class="form-group-item">
+                <label>行程分類*</label>
+                <select id="field-sched-cat" class="form-control-select">
+                    <option value="📷 景點" ${data?.category==='📷 景點'?'selected':''}>📷 景點</option>
+                    <option value="🍽️ 餐廳" ${data?.category==='🍽️ 餐廳'?'selected':''}>🍽️ 餐廳</option>
+                    <option value="🚆 交通" ${data?.category==='🚆 交通'?'selected':''}>🚆 交通</option>
+                    <option value="🏨 住宿" ${data?.category==='🏨 住宿'?'selected':''}>🏨 住宿</option>
+                    <option value="🛍️ 購物" ${data?.category==='🛍️ 購物'?'selected':''}>🛍️ 購物</option>
+                </select>
+            </div>
+            <div class="form-group-item">
+                <label>活動/目的地名稱*</label>
+                <input type="text" id="field-sched-title" class="form-control-input" value="${data?.title || ''}" placeholder="例如：築地市場"/>
+            </div>
+            <div class="form-group-item">
+                <label>日期進程*</label>
+                <select id="field-sched-day" class="form-control-select">
+                    ${appDatabase.days.map((t, idx) => {
+                        const p = parseDateDetails(t.dateStr);
+                        return `<option value="${idx}" ${data?.day==idx || (!data && idx===selectedScheduleDayIndex)?'selected':''}>Day ${idx+1} (${p.monthStr}${p.dayNum}日 ${p.dayName})</option>`;
+                    }).join('')}
+                </select>
+            </div>
+            <div class="form-group-item">
+                <label>時間安排 (xx:xx)*</label>
+                <input type="time" id="field-sched-time" class="form-control-input" value="${data?.time || '10:00'}"/>
+            </div>
+            <div class="form-group-item">
+                <label>地址導航 (用於 Google Maps 連接)</label>
+                <input type="text" id="field-sched-addr" class="form-control-input" value="${data?.address || ''}" placeholder="完整的目的地地址"/>
+            </div>
+            <div class="form-group-item">
+                <label>優先停車地點</label>
+                <input type="text" id="field-sched-ppark" class="form-control-input" value="${data?.priority_park || ''}"/>
+            </div>
+            <div class="form-group-item">
+                <label>優先停車位置導航連結</label>
+                <input type="url" id="field-sched-pnav" class="form-control-input" value="${data?.priority_nav || ''}" placeholder="https://..."/>
+            </div>
+            <div class="form-group-item">
+                <label>候補停車地點</label>
+                <input type="text" id="field-sched-fpark" class="form-control-input" value="${data?.fallback_park || ''}"/>
+            </div>
+            <div class="form-group-item">
+                <label>候補停車位置導航連結</label>
+                <input type="url" id="field-sched-fnav" class="form-control-input" value="${data?.fallback_nav || ''}" placeholder="https://..."/>
+            </div>
+            <div class="form-group-item">
+                <label>營業時間</label>
+                <input type="text" id="field-sched-hours" class="form-control-input" value="${data?.hours || ''}"/>
+            </div>
+            <div class="form-group-item">
+                <label>特色/描述</label>
+                <input type="text" id="field-sched-desc" class="form-control-input" value="${data?.desc || ''}"/>
+            </div>
+            <div class="form-group-item">
+                <label>備註</label>
+                <textarea id="field-sched-note" class="form-control-textarea" rows="2">${data?.note || ''}</textarea>
+            </div>
+        `;
+    }
+    else if(scope === 'booking') {
+        root.innerHTML = `
+            <div class="form-group-item">
+                <label>預約類型四大項</label>
+                <select id="field-book-type" class="form-control-select" onchange="toggleBookingFormTypeView(this.value)">
+                    <option value="Flight" ${data?.type==='Flight'?'selected':''}>機票 (Flight)</option>
+                    <option value="Hotel" ${data?.type==='Hotel'?'selected':''}>住宿 (Accommodation)</option>
+                    <option value="Car" ${data?.type==='Car'?'selected':''}>租車 (Car Rental)</option>
+                    <option value="Restaurant" ${data?.type==='Restaurant'?'selected':''}>餐廳 (Restaurant)</option>
+                </select>
+            </div>
+            <div id="bookingDynamicFieldsSubContainer"></div>
+        `;
+        toggleBookingFormTypeView(data?.type || 'Flight', data);
+    }
+    else if(scope === 'ledger') {
+        const defaultDate = (appDatabase.days[selectedScheduleDayIndex] || appDatabase.days[0])?.dateStr || '2026-06-11';
+        root.innerHTML = `
+            <div class="form-group-item">
+                <label>日期</label>
+                <input type="date" id="field-ledg-date" class="form-control-input" value="${data?.date || defaultDate}"/>
+            </div>
+            <div class="form-group-item">
+                <label>項目名稱</label>
+                <input type="text" id="field-ledg-item" class="form-control-input" value="${data?.item || ''}" placeholder="例如：藥妝店面膜"/>
+            </div>
+            <div class="form-group-item">
+                <label>消費分類</label>
+                <select id="field-ledg-cat" class="form-control-select">
+                    <option value="食物" ${data?.category==='食物'?'selected':''}>🍽️ 食物</option>
+                    <option value="購物" ${data?.category==='購物'?'selected':''}>🛍️ 購物</option>
+                </select>
+            </div>
+            <div class="form-group-item">
+                <label>金額 (日圓 JPY)*</label>
+                <input type="number" id="field-ledg-amount" class="form-control-input" value="${data?.amount || ''}"/>
+            </div>
+            <div class="form-group-item">
+                <label>付款方式</label>
+                <select id="field-ledg-method" class="form-control-select">
+                    <option value="現金" ${data?.payMethod==='現金'?'selected':''}>現金</option>
+                    <option value="信用卡" ${data?.payMethod==='信用卡'?'selected':''}>信用卡</option>
+                    <option value="支付寶" ${data?.payMethod==='支付寶'?'selected':''}>支付寶</option>
+                    <option value="其他" ${data?.payMethod==='其他'?'selected':''}>其他</option>
+                </select>
+            </div>
+        `;
+    }
+    else if(scope === 'shopping') {
+        root.innerHTML = `
+            <div class="form-group-item">
+                <label>商品名稱*</label>
+                <input type="text" id="field-shop-name" class="form-control-input" value="${data?.name || ''}"/>
+            </div>
+            <div class="form-group-item">
+                <label>購買地點/備註</label>
+                <input type="text" id="field-shop-note" class="form-control-input" value="${data?.note || ''}" placeholder="例如：Donki 或是 藥妝店"/>
+            </div>
+            <div class="form-group-item">
+                <label>商品分類標籤</label>
+                <select id="field-shop-cat" class="form-control-select">
+                    <option value="藥妝" ${data?.category==='藥妝'?'selected':''}>藥妝</option>
+                    <option value="零食" ${data?.category==='零食'?'selected':''}>零食</option>
+                    <option value="電器" ${data?.category==='電器'?'selected':''}>電器</option>
+                    <option value="服飾" ${data?.category==='服飾'?'selected':''}>服飾</option>
+                    <option value="紀念品" ${data?.category==='紀念品'?'selected':''}>紀念品</option>
+                    <option value="其他" ${data?.category==='其他'?'selected':''}>其他</option>
+                </select>
+            </div>
+            <div class="form-group-item">
+                <label>重要程度標籤</label>
+                <select id="field-shop-priority" class="form-control-select">
+                    <option value="一般" ${data?.priority==='一般'?'selected':''}>一般</option>
+                    <option value="重要" ${data?.priority==='重要'?'selected':''}>重要</option>
+                </select>
+            </div>
+        `;
+    }
+    else if(scope === 'prep') {
+        root.innerHTML = `
+            <div class="form-group-item">
+                <label>準備項目名稱*</label>
+                <input type="text" id="field-prep-name" class="form-control-input" value="${data?.name || ''}"/>
+            </div>
+        `;
+    }
+    else if(scope === 'member') {
+        root.innerHTML = `
+            <div class="form-group-item">
+                <label>成員名稱*</label>
+                <input type="text" id="field-mem-name" class="form-control-input" value="${data?.name || ''}"/>
+            </div>
+            <div class="form-group-item">
+                <label>旅行職責*</label>
+                <input type="text" id="field-mem-role" class="form-control-input" value="${data?.role || ''}"/>
+            </div>
+            <div class="form-group-item">
+                <label>圖像網址連結 (選填)</label>
+                <input type="url" id="field-mem-img" class="form-control-input" value="${data?.image || ''}" placeholder="https://..."/>
+            </div>
+        `;
+    }
+}
+
+function toggleBookingFormTypeView(type, data) {
+    const sub = document.getElementById("bookingDynamicFieldsSubContainer");
+    const defaultDate = (appDatabase.days[0])?.dateStr || '2026-06-11';
+    if(type === 'Flight') {
+        sub.innerHTML = `
+            <div class="form-group-item"><label>航空公司名稱*</label><input type="text" id="f-name" class="form-control-input" value="${data?.name||'香港航空'}"/></div>
+            <div class="form-group-item"><label>航班編號 (例如: CX596)*</label><input type="text" id="f-num" class="form-control-input" value="${data?.flightNum||''}"/></div>
+            <div class="form-group-item"><label>出發機場代碼</label><input type="text" id="f-dep" class="form-control-input" value="${data?.depart||'HKG'}"/></div>
+            <div class="form-group-item"><label>抵達機場代碼</label><input type="text" id="f-arr" class="form-control-input" value="${data?.arrive||'NRT'}"/></div>
+            <div class="form-group-item"><label>日期</label><input type="date" id="f-date" class="form-control-input" value="${data?.date||defaultDate}"/></div>
+            <div class="form-group-item"><label>起飛時間</label><input type="time" id="f-deptime" class="form-control-input" value="${data?.departTime||'15:30'}"/></div>
+            <div class="form-group-item"><label>備註</label><input type="text" id="f-note" class="form-control-input" value="${data?.note||''}"/></div>
+        `;
+    } else {
+        sub.innerHTML = `
+            <div class="form-group-item"><label>名稱*</label><input type="text" id="o-name" class="form-control-input" value="${data?.name||''}"/></div>
+            <div class="form-group-item"><label>預約確認編號</label><input type="text" id="o-code" class="form-control-input" value="${data?.code||''}"/></div>
+            <div class="form-group-item"><label>完整地址/地點提示</label><input type="text" id="o-addr" class="form-control-input" value="${data?.addr||''}"/></div>
+            <div class="form-group-item"><label>日期與時間範圍安排說明</label><input type="text" id="o-time" class="form-control-input" value="${data?.timeStr||''}"/></div>
+            <div class="form-group-item"><label>備註</label><input type="text" id="o-note" class="form-control-input" value="${data?.note||''}"/></div>
+        `;
+    }
+}
+
+function saveModalFormDataEntry() {
+    const { scope, id } = activeEditingTargetMeta;
+    let targetId = id || "id_" + Date.now();
+
+    if (scope === 'dayMeta') {
+        const newDateStr = document.getElementById("field-day-date").value;
+        if (!newDateStr) { alert("請選擇日期"); return; }
+        const parsed = parseDateDetails(newDateStr);
+        appDatabase.days[id] = {
+            monthStr: parsed.monthStr,
+            dayNum: parsed.dayNum,
+            dayName: parsed.dayName,
+            dateStr: newDateStr,
+            city: document.getElementById("field-day-city").value || "Japan",
+            icon: document.getElementById("field-day-icon").value,
+            desc: document.getElementById("field-day-desc").value || "Sunny",
+            temp: document.getElementById("field-day-temp").value || "25°C"
+        };
+        syncLocalStorage();
+        closeFormModal();
+        renderDateCarousel();
+        renderScheduleTimeline();
+        return;
+    }
+
+    if(scope === 'schedule') {
+        const title = document.getElementById("field-sched-title").value;
+        if(!title) { alert("請填寫活動名稱"); return; }
+        
+        let itemData = {
+            id: targetId,
+            category: document.getElementById("field-sched-cat").value,
+            title: title,
+            day: parseInt(document.getElementById("field-sched-day").value),
+            time: document.getElementById("field-sched-time").value,
+            address: document.getElementById("field-sched-addr").value,
+            priority_park: document.getElementById("field-sched-ppark").value,
+            priority_nav: document.getElementById("field-sched-pnav").value,
+            fallback_park: document.getElementById("field-sched-fpark").value,
+            fallback_nav: document.getElementById("field-sched-fnav").value,
+            hours: document.getElementById("field-sched-hours").value,
+            desc: document.getElementById("field-sched-desc").value,
+            note: document.getElementById("field-sched-note").value
+        };
+
+        if(!id) appDatabase.schedule.push(itemData);
+        else { let idx = appDatabase.schedule.findIndex(i=>i.id===id); appDatabase.schedule[idx] = itemData; }
+    }
+    else if(scope === 'booking') {
+        const bType = document.getElementById("field-book-type").value;
+        let itemData = { id: targetId, type: bType };
+        
+        if(bType === 'Flight') {
+            itemData.name = document.getElementById("f-name").value;
+            itemData.flightNum = document.getElementById("f-num").value;
+            itemData.depart = document.getElementById("f-dep").value;
+            itemData.arrive = document.getElementById("f-arr").value;
+            itemData.date = document.getElementById("f-date").value;
+            itemData.departTime = document.getElementById("f-deptime").value;
+            itemData.note = document.getElementById("f-note").value;
+        } else {
+            itemData.name = document.getElementById("o-name").value;
+            itemData.code = document.getElementById("o-code").value;
+            itemData.addr = document.getElementById("o-addr").value;
+            itemData.timeStr = document.getElementById("o-time").value;
+            itemData.note = document.getElementById("o-note").value;
+        }
+
+        if(!id) appDatabase.booking.push(itemData);
+        else { let idx = appDatabase.booking.findIndex(i=>i.id===id); appDatabase.booking[idx] = itemData; }
+    }
+    else if(scope === 'ledger') {
+        let itemData = {
+            id: targetId,
+            date: document.getElementById("field-ledg-date").value,
+            item: document.getElementById("field-ledg-item").value || "未知名目",
+            category: document.getElementById("field-ledg-cat").value,
+            amount: parseFloat(document.getElementById("field-ledg-amount").value) || 0,
+            payMethod: document.getElementById("field-ledg-method").value
+        };
+        if(!id) appDatabase.ledger.push(itemData);
+        else { let idx = appDatabase.ledger.findIndex(i=>i.id===id); appDatabase.ledger[idx] = itemData; }
+    }
+    else if(scope === 'shopping') {
+        let itemData = {
+            id: targetId,
+            name: document.getElementById("field-shop-name").value || "未名好物",
+            note: document.getElementById("field-shop-note").value,
+            category: document.getElementById("field-shop-cat").value,
+            priority: document.getElementById("field-shop-priority").value,
+            checked: id ? appDatabase.shopping.find(i=>i.id===id).checked : false
+        };
+        if(!id) appDatabase.shopping.push(itemData);
+        else { let idx = appDatabase.shopping.findIndex(i=>i.id===id); appDatabase.shopping[idx] = itemData; }
+    }
+    else if(scope === 'prep') {
+        let itemData = {
+            id: targetId,
+            name: document.getElementById("field-prep-name").value || "準備項目",
+            checked: id ? appDatabase.prep.find(i=>i.id===id).checked : false
+        };
+        if(!id) appDatabase.prep.push(itemData);
+        else { let idx = appDatabase.prep.findIndex(i=>i.id===id); appDatabase.prep[idx] = itemData; }
+    }
+    else if(scope === 'member') {
+        let itemData = {
+            id: targetId,
+            name: document.getElementById("field-mem-name").value || "探索夥伴",
+            role: document.getElementById("field-mem-role").value || "成員",
+            image: document.getElementById("field-mem-img").value
+        };
+        if(!id) appDatabase.member.push(itemData);
+        else { let idx = appDatabase.member.findIndex(i=>i.id===id); appDatabase.member[idx] = itemData; }
+    }
+
+    syncLocalStorage();
+    closeFormModal();
+    renderAllViews();
+}
+
+function deleteModalDataEntry() {
+    const { scope, id } = activeEditingTargetMeta;
+    if (id === null || id === undefined) return;
+
+    if (scope === 'dayMeta') {
+        if (appDatabase.days.length <= 1) {
+            alert("行程至少需要保留 1 天喔！");
+            return;
+        }
+        if (confirm(`🚨 確定要刪除 Day ${id + 1} 嗎？該天的行程活動與貼紙也會一併移除。`)) {
+            appDatabase.days.splice(id, 1);
+
+            appDatabase.schedule = appDatabase.schedule
+                .filter(s => parseInt(s.day) !== id)
+                .map(s => {
+                    if (parseInt(s.day) > id) {
+                        return Object.assign({}, s, { day: parseInt(s.day) - 1 });
+                    }
+                    return s;
+                });
+
+            appDatabase.stickers = appDatabase.stickers
+                .filter(st => !(st.page === 'schedule' && st.day === id))
+                .map(st => {
+                    if (st.page === 'schedule' && st.day > id) {
+                        return Object.assign({}, st, { day: st.day - 1 });
+                    }
+                    return st;
+                });
+
+            if (selectedScheduleDayIndex >= appDatabase.days.length) {
+                selectedScheduleDayIndex = Math.max(0, appDatabase.days.length - 1);
+            }
+
+            syncLocalStorage();
+            closeFormModal();
+            renderDateCarousel();
+            renderScheduleTimeline();
+            renderStickersOnCurrentView();
+        }
+        return;
+    }
+
+    if(confirm("🚨 確定要刪除此筆欄位明細資料嗎？將同步移出畫面。")) {
+        appDatabase[scope] = appDatabase[scope].filter(i => i.id !== id);
+        syncLocalStorage();
+        closeFormModal();
+        renderAllViews();
+    }
+}
+
+// --- 防禦型公用安全輔助函數 (Sanitizers) ---
+function escapeHtml(str) {
+    if(!str) return '';
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function ensureValidUrl(url) {
+    if(!url) return '#';
+    if(url.startsWith('http://') || url.startsWith('https://')) return url;
+    return 'https://' + url;
+}
+</script>
+
+</body>
+</html>
